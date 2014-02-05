@@ -13,7 +13,7 @@ Add the bundle in your composer.json
 ```
 Download bundle by running the command:
 ``` bash
-$ php composer.phar update acseo/fast-show-generator-bundle
+$ php composer.phar update acseo/formfeaturegenerator-bundle
 ```
 Composer will install the bundle in `vendor/ACSEO` directory.
 
