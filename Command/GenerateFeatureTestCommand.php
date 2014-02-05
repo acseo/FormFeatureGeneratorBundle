@@ -13,7 +13,7 @@ use Symfony\Component\Process\Process;
 /**
  * GenerateExpeditionCommand.
  *
- * 
+ *
  */
 class GenerateFeatureTestCommand extends ContainerAwareCommand
 {
@@ -55,26 +55,26 @@ class GenerateFeatureTestCommand extends ContainerAwareCommand
         $password = $input->getOption("password");
         $login_url = $input->getOption("login-url");
         $errorClass = $input->getOption("class-error");
-        
+
         // GET path of Destination bundle
         $pathDestination = $this->getContainer()->get('kernel')->getBundle($bundle)->getPath();
         // Create Destination directory
         $output->write("<info>Checking if Features folder exist in ".$bundle."...</info>");
         $featurePath = $pathDestination.DIRECTORY_SEPARATOR."Features";
-        if(!is_dir($featurePath)){
+        if (!is_dir($featurePath)) {
             $output->write("<info>Creating...</info>");
             mkdir($featurePath);
         }
         $output->writeln("<info>OK</info>");
         $output->write("<info>Checking if Features/Context folder exist in ".$bundle."...</info>");
         $contextPath = $featurePath."/Context";
-        if(!is_dir($contextPath)){
+        if (!is_dir($contextPath)) {
             mkdir($contextPath);
         }
         $output->writeln("<info>OK</info>");
         $output->write("<info>Checking if Features/Data folder exist in ".$bundle."...</info>");
         $dataPath = $featurePath."/Data";
-        if(!is_dir($dataPath)){
+        if (!is_dir($dataPath)) {
             $output->write("<info>Creating...</info>");
             mkdir($dataPath);
         }
@@ -84,7 +84,7 @@ class GenerateFeatureTestCommand extends ContainerAwareCommand
         $output->write("<info>Checking if features demo exist in ".$bundle."...</info>");
         $originDemoFeature = __DIR__."/../Features/demoTest.feature";
         $newDemoFeature = $featurePath."/demoTest.feature";
-        if(!file_exists($newDemoFeature)){
+        if (!file_exists($newDemoFeature)) {
             $output->write("<info>Copying...</info>");
             copy($originDemoFeature, $newDemoFeature);
         }
@@ -93,7 +93,7 @@ class GenerateFeatureTestCommand extends ContainerAwareCommand
         $output->write("<info>Checking if features demo header exist in ".$bundle."...</info>");
         $originDemoFeature = __DIR__."/../Features/demoHeaderCSV.feature";
         $newDemoFeature = $featurePath.DIRECTORY_SEPARATOR."demoHeaderCSV.feature";
-        if(!file_exists($newDemoFeature)){
+        if (!file_exists($newDemoFeature)) {
             $output->write("<info>Copying...</info>");
             copy($originDemoFeature, $newDemoFeature);
         }
@@ -102,7 +102,7 @@ class GenerateFeatureTestCommand extends ContainerAwareCommand
         $output->write("<info>Checking if feature context exist in ".$bundle."...</info>");
         $originContextFeature = __DIR__."/../Features/Context/FeatureContext.php.dist";
         $newContextFeature = $contextPath."/FeatureContext.php";
-        if(!file_exists($newContextFeature)){
+        if (!file_exists($newContextFeature)) {
             $output->write("<info>Copying...</info>");
             copy($originContextFeature, $newContextFeature);
         }
@@ -111,25 +111,26 @@ class GenerateFeatureTestCommand extends ContainerAwareCommand
         $output->write("<info>Checking if behat config exist in your project...</info>");
         $originBehatConfig = __DIR__."/../Features/behat.yml.dist";
         $arrayPathDestination = explode(DIRECTORY_SEPARATOR, $pathDestination);
-        
-        while(end($arrayPathDestination) != "src"){
+
+        while (end($arrayPathDestination) != "src") {
             array_pop($arrayPathDestination);
         }
         $srcPath = implode(DIRECTORY_SEPARATOR, $arrayPathDestination);
         $newBehatConfig = $srcPath."/../behat.yml";
-        if(!file_exists($newBehatConfig)){
+        if (!file_exists($newBehatConfig)) {
             $output->write("<info>Copying...</info>");
             copy($originBehatConfig, $newBehatConfig);
         }
         $output->writeln("<info>OK</info>");
         $behatConfig = new Parser();
         $behatConfig = $behatConfig->parse(file_get_contents($newBehatConfig));
-        if($behatConfig['default']['extensions']['Behat\MinkExtension\Extension']['base_url'] == null){
+        if ($behatConfig['default']['extensions']['Behat\MinkExtension\Extension']['base_url'] == null) {
             $output->writeln("<error>You must configure the value base_url in behat.yml</error>");
+
             return 0;
         }
         // Ajouter le namespace dans le fichier context feature Destination
-        if( strpos(file_get_contents($newContextFeature),"namespace") === false) {
+        if ( strpos(file_get_contents($newContextFeature),"namespace") === false) {
             $arrayPathDestination = explode(DIRECTORY_SEPARATOR."src".DIRECTORY_SEPARATOR, $pathDestination);
             $namespace = str_replace(DIRECTORY_SEPARATOR, "\\", end($arrayPathDestination));
             $namespace = "namespace ".$namespace."\\Features\\Context;";
@@ -163,9 +164,8 @@ class GenerateFeatureTestCommand extends ContainerAwareCommand
             throw new \RuntimeException($process->getErrorOutput());
         }
         $output->writeln("<info>End.</info>");
-        
-        
+
         //exec($behatCommand);
-        
+
     }
 }

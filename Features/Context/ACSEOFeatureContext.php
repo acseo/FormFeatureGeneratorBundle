@@ -6,7 +6,6 @@ use Symfony\Component\HttpKernel\KernelInterface;
 use Behat\Symfony2Extension\Context\KernelAwareInterface;
 use Behat\MinkExtension\Context\MinkContext;
 use Behat\Mink\Exception\ExpectationException;
-use Behat\Behat\Context\Step;
 use Behat\Behat\Context\BehatContext,
     Behat\Behat\Exception\PendingException;
 use Behat\Gherkin\Node\PyStringNode,
@@ -39,7 +38,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
     private $filename;
     private $rowErrors;
     private $isConnected;
-    
+
     /**
      * Initializes context with parameters from behat.yml.
      *
@@ -74,13 +73,13 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
     {
         $this->csvFiles = $this->importFileDir."*.csv";
     }
-    
+
     /**
      * @When /^I verify data$/
      */
     public function iVerifyData()
     {
-        foreach (glob($this->csvFiles) as $file){
+        foreach (glob($this->csvFiles) as $file) {
             $this->fp = fopen($file, 'r');
             $filename = explode("/", $file);
             $this->filename = end($filename);
@@ -90,13 +89,13 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
             fclose($this->fp);
         }
     }
-    
+
     /**
      * @When /^I create header$/
      */
     public function iCreateHeader()
     {
-        foreach (glob($this->csvFiles) as $file){
+        foreach (glob($this->csvFiles) as $file) {
             $this->fp = fopen($file, 'r');
             $filename = explode("/", $file);
             $this->filename = end($filename);
@@ -106,86 +105,87 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
             fclose($this->fp);
         }
     }
-    
+
     /**
      * @Then /^I should check result$/
      */
     public function iShouldCheckResult()
     {
-        if(count($this->rowErrors) > 0){
+        if (count($this->rowErrors) > 0) {
             throw new ExpectationException("Errors in lines: ".implode(",", $this->rowErrors).".", $this->getSession());
         }
     }
-    
-    private function initKeyDataFromCSVFile($file){
+
+    private function initKeyDataFromCSVFile($file)
+    {
         $data = fgetcsv($this->fp);
         $this->keyData = explode(";", $data[0]);
         $this->pointerFile = ftell($this->fp);
     }
-    
-    private function writeHeaderInCSVFile($file){
 
+    private function writeHeaderInCSVFile($file)
+    {
         $data = fgetcsv($this->fp);
         $this->combineKeyAndData($this->keyData, $data[0]);
-        if($this->dataTable['username'] != "" && $this->dataTable['password'] != "")
-        {
+        if ($this->dataTable['username'] != "" && $this->dataTable['password'] != "") {
             $this->clientConnect();
-        }    
+        }
         $this->visit($this->dataTable['getUrl']);
         $this->exportCSVFileWithHeader($file,false);
     }
-    
-    private function verifyCSVFile($file){
+
+    private function verifyCSVFile($file)
+    {
         $row = 0;
-        while (($data = fgetcsv($this->fp)) !== FALSE){
+        while (($data = fgetcsv($this->fp)) !== FALSE) {
             $this->testError = true;
             $row++;
             $this->out->writeln("<comment>Test du ligne ".$row."</comment>");
 // Get the data row and merge the keyData as key for dataTable
             $this->combineKeyAndData($this->keyData, $data[0]);
 // Create a new client to browse the application
-            if($this->dataTable['loginUrl']!="" && $this->isConnected == false){
+            if ($this->dataTable['loginUrl']!="" && $this->isConnected == false) {
                 $boolLoggedIn = $this->clientConnect();
-                if($boolLoggedIn == false){
+                if ($boolLoggedIn == false) {
                     $this->out->writeln("<error>Authentification refused</erro>");
                     continue;
-                }else{
+                } else {
                     $this->isConnected = true;
                 }
             }
             $this->visit($this->dataTable['getUrl']);
             $buttonName = $this->fillFormAndPressButton();
-            
+
             $this->getSession()->wait(1000);
-            if($this->dataTable['submitUrl']!=""){
-                if($this->getSession()->getCurrentUrl()== $this->dataTable['submitUrl']){
+            if ($this->dataTable['submitUrl']!="") {
+                if ($this->getSession()->getCurrentUrl()== $this->dataTable['submitUrl']) {
                     $this->testError = true;
-                }else{
+                } else {
                     $this->out->writeln("<error>Error du submit Url (current url: ".$this->getSession()->getCurrentUrl().")</error>");
                     $this->testError = false;
                 }
             }
-            if($this->error == true){
+            if ($this->error == true) {
                 $this->exportCSVFileWithHeader($file,true);
                 $this->out->writeln("<error>Erreur sur le header verifié les champs a inserer</error>");
                 $this->out->writeln("<info>Géneration du nouveau fichier ".$this->filename." avec le header convenable</info>");
                 break;
             }
             $classHasError = array_key_exists('classHasError', $this->dataTable) && $this->dataTable['classHasError']!="" ? $this->dataTable['classHasError'] : null;
-            if($classHasError != null){
+            if ($classHasError != null) {
                 $errors = $this->getSession()->getPage()->findAll("css", ".".$classHasError);
                 $formOK = count($errors) > 0 ? "false" : "true";
-                if($formOK == strtolower(end($this->dataTable)) && $formOK == "true"){
+                if ($formOK == strtolower(end($this->dataTable)) && $formOK == "true") {
                     $this->out->writeln("<bg=green;fg=black>La form est ".$formOK." et le result dans le fichier est ".end($this->dataTable)."</bg=green;fg=black>");
-                }elseif($formOK == strtolower(end($this->dataTable)) && $formOK == "false"){
+                } elseif ($formOK == strtolower(end($this->dataTable)) && $formOK == "false") {
                     $this->out->writeln("<bg=yellow;fg=black>La form est ".$formOK." et le result dans le fichier est ".end($this->dataTable)."</bg=yellow;fg=black>");
-                }else{
+                } else {
                     $this->testError = false;
                     $this->out->writeln("<error>La form est ".$formOK." et le result dans le fichier est ".end($this->dataTable)."</error>");
                 }
-                if(count($errors)>0){
+                if (count($errors)>0) {
                     $this->out->writeln("Les messages d'erreurs sont:");
-                    foreach ($errors as $error){
+                    foreach ($errors as $error) {
                         $this->out->writeln("<error>".$error->getText()."</error>"."\n");
                     }
                 }
@@ -195,122 +195,129 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
         }
         $this->visit("/");
     }
-    
-    protected function combineKeyAndData($key,$data){
+
+    protected function combineKeyAndData($key,$data)
+    {
         $dataTable = explode(";", $data);
         $this->dataTable = array_combine($this->keyData, $dataTable);
     }
-    
-    protected function clientConnect(){
+
+    protected function clientConnect()
+    {
         $this->visit($this->dataTable['loginUrl']);
         $loginUrl = $this->getSession()->getCurrentUrl();
         $buttonName = $this->fillLoginFormAndPressButton();
         $loggedIn = true;
-        if($loginUrl == $this->getSession()->getCurrentUrl()){
+        if ($loginUrl == $this->getSession()->getCurrentUrl()) {
             $loggedIn=false;
         }
+
         return $loggedIn;
     }
-    
-    protected function fillLoginFormAndPressButton(){
+
+    protected function fillLoginFormAndPressButton()
+    {
         $form = null;
-        if($this->dataTable['loginFormIdOrClass'] != ""){
+        if ($this->dataTable['loginFormIdOrClass'] != "") {
             $form = $this->getSession()->getPage()->find("css", "form#".$this->dataTable['loginFormIdOrClass']);
             if($form == NULL)
                 $form = $this->getSession()->getPage()->find("css", "form.".$this->dataTable['loginFormIdOrClass']);
-        }else{
+        } else {
             $form = $this->getSession()->getPage()->find("css", "form");
         }
-        if($form == null){
+        if ($form == null) {
             $this->out->writeln("<error>login form not found</error>");
+
             return 0;
         }
         $inputs = $form->findAll("css", "input");
         $arrayTypeNotExist = array('submit', 'hidden');
         $submitButton="";
-        foreach ($inputs as $input){
+        foreach ($inputs as $input) {
             $name = $input->getAttribute("name");
             $type = strtolower($input->getAttribute("type"));
-            if(strpos($name, 'username')!==false && $type = "text"){
+            if (strpos($name, 'username')!==false && $type = "text") {
                 $this->fillField($name, $this->dataTable['username']);
             }
-            if(strpos($name, 'password')!==false && $type = "password"){
+            if (strpos($name, 'password')!==false && $type = "password") {
                 $this->fillField($name, $this->dataTable['password']);
             }
-            if($type == "submit"){
+            if ($type == "submit") {
                 $submitButton = $input;
             }
         }
-        
-        if($submitButton==""){
+
+        if ($submitButton=="") {
             $buttons = $this->getSession()->getPage()->findAll("css", "button");
-            foreach ($buttons as $button){
+            foreach ($buttons as $button) {
                 $type = strtolower($button->getAttribute("type"));
-                if($type == "submit"){
+                if ($type == "submit") {
                     $submitButton = $button;
                 }
             }
         }
         $submitButton->press();
     }
-    
-    protected function fillFormAndPressButton(){
+
+    protected function fillFormAndPressButton()
+    {
         $form = null;
-        if($this->dataTable['formIdOrClass'] != ""){
+        if ($this->dataTable['formIdOrClass'] != "") {
             $form = $this->getSession()->getPage()->find("css", "form#".$this->dataTable['formIdOrClass']);
             if($form == NULL)
                 $form = $this->getSession()->getPage()->find("css", "form.".$this->dataTable['formIdOrClass']);
-        }else{
+        } else {
             $form = $this->getSession()->getPage()->find("css", "form");
         }
-        if($form == null){
+        if ($form == null) {
             $this->out->writeln("<error>submit form not found</error>");
+
             return 0;
         }
         $inputs = $form->findAll("css", "input");
         $arrayTypeNotExist = array('submit', 'hidden');
         $submitButton="";
-        foreach ($inputs as $input){
+        foreach ($inputs as $input) {
             $name = $input->getAttribute("name");
             $type = strtolower($input->getAttribute("type"));
             $nameTemp = $name;
-            if($name !=NULL){
-                if(!array_key_exists($nameTemp, $this->dataTable) && $nameTemp != "" && !in_array($type, $arrayTypeNotExist)){
+            if ($name !=NULL) {
+                if (!array_key_exists($nameTemp, $this->dataTable) && $nameTemp != "" && !in_array($type, $arrayTypeNotExist)) {
                     preg_match_all('/\[([^\]]+)\]/', $nameTemp, $nameTemp); //recuperer juste le nom du input name (ex. acseo_form_enfant[nom] et on recupere nom)
                     $nameTemp = end($nameTemp[1]);
-                    if(!array_key_exists($nameTemp, $this->dataTable)){
+                    if (!array_key_exists($nameTemp, $this->dataTable)) {
                         $this->error = true;
                     }
                 }
-                if(!$this->error && !in_array($type, $arrayTypeNotExist)){
-                    if($type == "text"){
+                if (!$this->error && !in_array($type, $arrayTypeNotExist)) {
+                    if ($type == "text") {
                         $this->fillField($name, $this->dataTable[$name]);
-                    }elseif ($type =="password"){
+                    } elseif ($type =="password") {
                         $this->fillField($name, $this->dataTable[$name]);
-                    }elseif ($type =="email"){
+                    } elseif ($type =="email") {
                         $this->fillField($name, $this->dataTable[$name]);
-                    }elseif($type == "radio"){
+                    } elseif ($type == "radio") {
                         if($input->getAttribute("value") == $this->dataTable[$name])
                             $input->check();
-                    }elseif ($type == "checkbox"){
+                    } elseif ($type == "checkbox") {
                         if($this->dataTable[$name]== 1)
                             $this->checkOption($name);
-                    }elseif($type == "submit"){
+                    } elseif ($type == "submit") {
                         $submitButton = $input;
-                    }elseif($type == "file"){
+                    } elseif ($type == "file") {
                         $input->attachFile($this->dataTable[$name]);
                     }
                 }
             }
         }
         $selects = $form->findAll("css", "select");
-        foreach ($selects as $select){
+        foreach ($selects as $select) {
             $name = $select->getAttribute("name");
             $nameTemp = $name;
-            if(!array_key_exists($nameTemp, $this->dataTable) && $nameTemp != ""){
+            if (!array_key_exists($nameTemp, $this->dataTable) && $nameTemp != "") {
                 preg_match_all('/\[([^\]]+)\]/', $nameTemp, $nameTemp); //recuperer juste le nom du input name (ex. acseo_form_enfant[nom] et on recupere nom)
                 $nameTemp = end($nameTemp[1]);
-                if(!array_key_exists($nameTemp, $this->dataTable)){
+                if (!array_key_exists($nameTemp, $this->dataTable)) {
                     $this->error = true;
                 }
             }
@@ -318,22 +325,22 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
                 $this->selectOption($name, $this->dataTable[$name]);
         }
         $textareas = $form->findAll("css", "textarea");
-        foreach ($textareas as $textarea){
+        foreach ($textareas as $textarea) {
             $name = $textarea->getAttribute("name");
             $nameTemp = $name;
-            if(!array_key_exists($nameTemp, $this->dataTable) && $nameTemp != ""){
+            if (!array_key_exists($nameTemp, $this->dataTable) && $nameTemp != "") {
                 preg_match_all('/\[([^\]]+)\]/', $nameTemp, $nameTemp); //recuperer juste le nom du input name (ex. acseo_form_enfant[nom] et on recupere nom)
                 $nameTemp = end($nameTemp[1]);
-                if(!array_key_exists($nameTemp, $this->dataTable)){
+                if (!array_key_exists($nameTemp, $this->dataTable)) {
                     $this->error = true;
                 }
             }
             if(!$this->error && $this->dataTable[$name]!="")
                 $this->fillField($name, $this->dataTable[$name]);
         }
-        if($submitButton==""){
+        if ($submitButton=="") {
             $buttons = $form->find("css", "button");
-            foreach ($buttons as $button){
+            foreach ($buttons as $button) {
                 $type = strtolower($button->getAttribute("type"));
                 if($type == "submit")
                     $submitButton = $button;
@@ -341,45 +348,49 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
         }
         $form->find("css", "[type='submit']")->press();
     }
-    
-    protected function getListInputName($backupCopy){
+
+    protected function getListInputName($backupCopy)
+    {
         $form = null;
-        if($this->dataTable['formIdOrClass'] != ""){
+        if ($this->dataTable['formIdOrClass'] != "") {
             $form = $this->getSession()->getPage()->find("css", "form#".$this->dataTable['formIdOrClass']);
             if($form == NULL)
                 $form = $this->getSession()->getPage()->find("css", "form.".$this->dataTable['formIdOrClass']);
-        }else{
+        } else {
             $form = $this->getSession()->getPage()->find("css", "form");
         }
-        if($form == null){
+        if ($form == null) {
             $this->out->writeln("<error>submit form not found</error>");
+
             return 0;
         }
         $arrayTypeNotExist = array('submit', 'hidden');
         $listAllInputs = array();
         $inputs = $form->findAll("css", "input");
-        foreach ($inputs as $input){
+        foreach ($inputs as $input) {
             $name = $input->getAttribute("name");
             $type = strtolower($input->getAttribute("type"));
                 if(!in_array($type, $arrayTypeNotExist))
                     array_push($listAllInputs, $name);
         }
         $selects = $form->findAll("css", "select");
-        foreach ($selects as $select){
+        foreach ($selects as $select) {
             $name = $select->getAttribute("name");
             array_push($listAllInputs, $name);
         }
         $textareas = $form->findAll("css", "textarea");
-        foreach ($textareas as $textarea){
+        foreach ($textareas as $textarea) {
             $name = $textarea->getAttribute("name");
             array_push($listAllInputs, $name);
         }
+
         return $listAllInputs;
     }
-    
-    protected function exportCSVFileWithHeader($file, $bakupCopy){
+
+    protected function exportCSVFileWithHeader($file, $bakupCopy)
+    {
         $listofAllInput = $this->getListInputName($bakupCopy);
-        for($i = 7; $i>=0; $i--){
+        for ($i = 7; $i>=0; $i--) {
             array_unshift($listofAllInput, $this->keyData[$i]);
         }
         array_push($listofAllInput, "result");
