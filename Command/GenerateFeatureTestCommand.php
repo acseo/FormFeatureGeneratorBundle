@@ -59,45 +59,56 @@ class GenerateFeatureTestCommand extends ContainerAwareCommand
         // GET path of Destination bundle
         $pathDestination = $this->getContainer()->get('kernel')->getBundle($bundle)->getPath();
         // Create Destination directory
-        $output->writeln("<info>Checking if Features folder exist in ".$bundle." Bundle...</info>");
+        $output->write("<info>Checking if Features folder exist in ".$bundle."...</info>");
         $featurePath = $pathDestination.DIRECTORY_SEPARATOR."Features";
         if(!is_dir($featurePath)){
-            $output->writeln("<info>Creating Features folder in ".$bundle." Bundle...</info>");
+            $output->write("<info>Creating...</info>");
             mkdir($featurePath);
         }
-        $output->writeln("<info>Checking if Features/Context folder exist in ".$bundle." Bundle...</info>");
+        $output->writeln("<info>OK</info>");
+        $output->write("<info>Checking if Features/Context folder exist in ".$bundle."...</info>");
         $contextPath = $featurePath."/Context";
         if(!is_dir($contextPath)){
-            $output->writeln("<info>Creating Features/Context folder in ".$bundle." Bundle...</info>");
             mkdir($contextPath);
         }
-        $output->writeln("<info>Checking if Features/Data folder exist in ".$bundle." Bundle...</info>");
+        $output->writeln("<info>OK</info>");
+        $output->write("<info>Checking if Features/Data folder exist in ".$bundle."...</info>");
         $dataPath = $featurePath."/Data";
         if(!is_dir($dataPath)){
-            $output->writeln("<info>Creating Features/Data folder in ".$bundle." Bundle...</info>");
+            $output->write("<info>Creating...</info>");
             mkdir($dataPath);
         }
+        $output->writeln("<info>OK</info>");
         // Copy file from Form Generator Bundle to Destination Bundle
         // Copy demoFeature
+        $output->write("<info>Checking if features demo exist in ".$bundle."...</info>");
         $originDemoFeature = __DIR__."/../Features/demoTest.feature";
         $newDemoFeature = $featurePath."/demoTest.feature";
         if(!file_exists($newDemoFeature)){
+            $output->write("<info>Copying...</info>");
             copy($originDemoFeature, $newDemoFeature);
         }
+        $output->writeln("<info>OK</info>");
         // Copy demoHeaderCSV
+        $output->write("<info>Checking if features demo header exist in ".$bundle."...</info>");
         $originDemoFeature = __DIR__."/../Features/demoHeaderCSV.feature";
         $newDemoFeature = $featurePath.DIRECTORY_SEPARATOR."demoHeaderCSV.feature";
         if(!file_exists($newDemoFeature)){
+            $output->write("<info>Copying...</info>");
             copy($originDemoFeature, $newDemoFeature);
         }
+        $output->writeln("<info>OK</info>");
         // Copy context Feature
+        $output->write("<info>Checking if feature context exist in ".$bundle."...</info>");
         $originContextFeature = __DIR__."/../Features/Context/FeatureContext.php.dist";
         $newContextFeature = $contextPath."/FeatureContext.php";
         if(!file_exists($newContextFeature)){
+            $output->write("<info>Copying...</info>");
             copy($originContextFeature, $newContextFeature);
-            
         }
+        $output->writeln("<info>OK</info>");
         // Copy behat configuration
+        $output->write("<info>Checking if behat config exist in your project...</info>");
         $originBehatConfig = __DIR__."/../Features/behat.yml.dist";
         $arrayPathDestination = explode(DIRECTORY_SEPARATOR, $pathDestination);
         
@@ -107,8 +118,10 @@ class GenerateFeatureTestCommand extends ContainerAwareCommand
         $srcPath = implode(DIRECTORY_SEPARATOR, $arrayPathDestination);
         $newBehatConfig = $srcPath."/../behat.yml";
         if(!file_exists($newBehatConfig)){
+            $output->write("<info>Copying...</info>");
             copy($originBehatConfig, $newBehatConfig);
         }
+        $output->writeln("<info>OK</info>");
         $behatConfig = new Parser();
         $behatConfig = $behatConfig->parse(file_get_contents($newBehatConfig));
         if($behatConfig['default']['extensions']['Behat\MinkExtension\Extension']['base_url'] == null){
@@ -116,17 +129,19 @@ class GenerateFeatureTestCommand extends ContainerAwareCommand
             return 0;
         }
         // Ajouter le namespace dans le fichier context feature Destination
-        $arrayPathDestination = explode(DIRECTORY_SEPARATOR."src".DIRECTORY_SEPARATOR, $pathDestination);
-        $namespace = str_replace(DIRECTORY_SEPARATOR, "\\", end($arrayPathDestination));
-        $namespace = "namespace ".$namespace."\\Features\\Context;";
-        $featureContextFile = file($newContextFeature);
-        $first_line = array_shift($featureContextFile);       // Remove first line and save it
-        array_unshift($featureContextFile, $namespace);  // push second line
-        array_unshift($featureContextFile, $first_line);
-        $fp = fopen($newContextFeature, 'w');       // Reopen the file
-        fwrite($fp, implode("", $featureContextFile));
-        fclose($fp);
-    // Write CSV file in Data
+        if( strpos(file_get_contents($newContextFeature),"namespace") === false) {
+            $arrayPathDestination = explode(DIRECTORY_SEPARATOR."src".DIRECTORY_SEPARATOR, $pathDestination);
+            $namespace = str_replace(DIRECTORY_SEPARATOR, "\\", end($arrayPathDestination));
+            $namespace = "namespace ".$namespace."\\Features\\Context;";
+            $featureContextFile = file($newContextFeature);
+            $first_line = array_shift($featureContextFile);       // Remove first line and save it
+            array_unshift($featureContextFile, $namespace);  // push second line
+            array_unshift($featureContextFile, $first_line);
+            $fp = fopen($newContextFeature, 'w');       // Reopen the file
+            fwrite($fp, implode("", $featureContextFile));
+            fclose($fp);
+        }
+        // Write CSV file in Data
         $dataFile = $featurePath."/Data/".str_replace("/", "_", $getUrl).".csv";
         $firstLine = array('loginUrl','loginFormIdOrClass','username','password','getUrl','formIdOrClass','submitUrl','classHasError');
         $secondLine = array($login_url,$loginFormId,$username,$password,$getUrl,$formId,"",$errorClass);
@@ -134,7 +149,7 @@ class GenerateFeatureTestCommand extends ContainerAwareCommand
         fputcsv($fp, $firstLine,";");
         fputcsv($fp, $secondLine,";");
         fclose($fp);
-    // execute la command pour générer le header du fichier CSV
+        // execute la command pour générer le header du fichier CSV
         $behatCommand = explode(DIRECTORY_SEPARATOR."src".DIRECTORY_SEPARATOR, $featurePath);
         //var_dump($behatCommand); die();
         $behatCommand = "bin".DIRECTORY_SEPARATOR."behat src".DIRECTORY_SEPARATOR.end($behatCommand).DIRECTORY_SEPARATOR."demoHeaderCSV.feature";
@@ -146,7 +161,7 @@ class GenerateFeatureTestCommand extends ContainerAwareCommand
         if (!$process->isSuccessful()) {
             throw new \RuntimeException($process->getErrorOutput());
         }
-        $output->writeln("<info>Fin du traitement</info>");
+        $output->writeln("<info>End.</info>");
         
         //print $process->getOutput();
         //exec($behatCommand);
