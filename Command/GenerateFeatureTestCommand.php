@@ -142,7 +142,7 @@ class GenerateFeatureTestCommand extends ContainerAwareCommand
             fclose($fp);
         }
         // Write CSV file in Data
-        $dataFile = $featurePath."/Data/".str_replace("/", "_", $getUrl).".csv";
+        $dataFile = $featurePath.DIRECTORY_SEPARATOR."Data".DIRECTORY_SEPARATOR.str_replace("/", "_", $getUrl).".csv";
         $firstLine = array('loginUrl','loginFormIdOrClass','username','password','getUrl','formIdOrClass','submitUrl','classHasError');
         $secondLine = array($login_url,$loginFormId,$username,$password,$getUrl,$formId,"",$errorClass);
         $fp = fopen($dataFile, "w");
@@ -158,12 +158,13 @@ class GenerateFeatureTestCommand extends ContainerAwareCommand
 
         $process = new Process($behatCommand);
         $process->run();
+        print $process->getOutput();
         if (!$process->isSuccessful()) {
             throw new \RuntimeException($process->getErrorOutput());
         }
         $output->writeln("<info>End.</info>");
         
-        //print $process->getOutput();
+        
         //exec($behatCommand);
         
     }

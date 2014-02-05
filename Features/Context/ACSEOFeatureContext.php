@@ -124,10 +124,13 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
     }
     
     private function writeHeaderInCSVFile($file){
+
         $data = fgetcsv($this->fp);
         $this->combineKeyAndData($this->keyData, $data[0]);
         if($this->dataTable['username'] != "" && $this->dataTable['password'] != "")
+        {
             $this->clientConnect();
+        }    
         $this->visit($this->dataTable['getUrl']);
         $this->exportCSVFileWithHeader($file,false);
     }
@@ -193,12 +196,12 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
         $this->visit("/");
     }
     
-    private function combineKeyAndData($key,$data){
+    protected function combineKeyAndData($key,$data){
         $dataTable = explode(";", $data);
         $this->dataTable = array_combine($this->keyData, $dataTable);
     }
     
-    private function clientConnect(){
+    protected function clientConnect(){
         $this->visit($this->dataTable['loginUrl']);
         $loginUrl = $this->getSession()->getCurrentUrl();
         $buttonName = $this->fillLoginFormAndPressButton();
@@ -208,7 +211,8 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
         }
         return $loggedIn;
     }
-    private function fillLoginFormAndPressButton(){
+    
+    protected function fillLoginFormAndPressButton(){
         $form = null;
         if($this->dataTable['loginFormIdOrClass'] != ""){
             $form = $this->getSession()->getPage()->find("css", "form#".$this->dataTable['loginFormIdOrClass']);
@@ -250,7 +254,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
         $submitButton->press();
     }
     
-    private function fillFormAndPressButton(){
+    protected function fillFormAndPressButton(){
         $form = null;
         if($this->dataTable['formIdOrClass'] != ""){
             $form = $this->getSession()->getPage()->find("css", "form#".$this->dataTable['formIdOrClass']);
@@ -338,7 +342,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
         $form->find("css", "[type='submit']")->press();
     }
     
-    private function getListInputName($backupCopy){
+    protected function getListInputName($backupCopy){
         $form = null;
         if($this->dataTable['formIdOrClass'] != ""){
             $form = $this->getSession()->getPage()->find("css", "form#".$this->dataTable['formIdOrClass']);
@@ -373,7 +377,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
         return $listAllInputs;
     }
     
-    private function exportCSVFileWithHeader($file, $bakupCopy){
+    protected function exportCSVFileWithHeader($file, $bakupCopy){
         $listofAllInput = $this->getListInputName($bakupCopy);
         for($i = 7; $i>=0; $i--){
             array_unshift($listofAllInput, $this->keyData[$i]);
