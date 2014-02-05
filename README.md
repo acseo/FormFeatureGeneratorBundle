@@ -20,13 +20,14 @@ Composer will install the bundle in `vendor/ACSEO` directory.
 #How to use
 We used selenium in our code, so you have to download [Selenium server](http://docs.seleniumhq.org/download/).
 
-then, you have to execute the comamnd below. This command will create files in your Bundle/Features directory.
-
 Update your app/AppKernel.php
 
 ```bash
 new ACSEO\FormFeatureGeneratorBundle\ACSEOFormFeatureGeneratorBundle()
 ```
+
+then, you have to execute the comamnd below. This command will create files in your Bundle/Features directory.
+
 ``` bash
 $ php app/console acseo:generate:feature YourBundleName GetUrl FormId --username=USERNAME --password=PASWORD --login-url=LOGINURL --login-form-id=LOGINFORMID --class-error=CLASSERROR 
 ```
