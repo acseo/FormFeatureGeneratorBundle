@@ -31,5 +31,10 @@
         "psr-0": { "ACSEO\\FormFeatureGeneratorBundle": "" }
     },
     "target-dir": "ACSEO/FormFeatureGeneratorBundle",
-	"minimum-stability": "dev"
+    "minimum-stability": "dev",
+    "extra": {
+        "branch-alias": {
+            "dev-master": "master"
+        }
+    }
 }
