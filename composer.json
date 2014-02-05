@@ -1,0 +1,35 @@
+{
+    "name": "acseo/formfeaturegenerator-bundle",
+    "type": "symfony-bundle",
+    "description": "A bundle to generate form features for Behat and Mink",
+    "keywords": ["Symfony", "Behat", "Mink", "Test", "Form"],
+    "homepage": "https://github.com/acseo/FormFeatureGeneratorBundle",
+    "authors": [
+	    {
+            "name": "Safwan Ghamrawi",
+            "email": "Safwan.Ghamrawi@acseo-conseil.fr"
+        },
+        {
+            "name": "Nicolas Potier",
+            "email": "Nicolas.Potier@acseo-conseil.fr"
+        },
+    ],
+    "require": {
+        "php": ">=5.3.2",
+        "symfony/symfony": ">=2.0.0",
+        "behat/behat":                  "2.4.*@stable",
+        "behat/mink":                   "1.4.*@stable",
+        "behat/symfony2-extension":     "*@stable",
+        "behat/mink-extension":         "*@stable",
+        "behat/mink-selenium2-driver":  "*@stable",
+        "behat/mink-browserkit-driver": "*@stable"
+    },
+    "suggest": {
+
+    },
+    "autoload": {
+        "psr-0": { "ACSEO\\FormFeatureGeneratorBundle": "" }
+    },
+    "target-dir": "ACSEO/FormFeatureGeneratorBundle",
+	"minimum-stability": "dev"
+}
