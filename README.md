@@ -7,7 +7,7 @@ Add the bundle in your composer.json
 ```js
 {
     "require": {
-        "acseo/formfeaturegenerator-bundle": "*"
+        "acseo/formfeaturegenerator-bundle": "dev-master"
     }
 }
 ```
