@@ -1,0 +1,7 @@
+parameters:
+#    acseo_form_feature_generator.example.class: ACSEO\FormFeatureGeneratorBundle\Example
+
+services:
+#    acseo_form_feature_generator.example:
+#        class: %acseo_form_feature_generator.example.class%
+#        arguments: [@service_id, "plain_value", %parameter%]

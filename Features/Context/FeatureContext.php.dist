@@ -1,0 +1,24 @@
+<?php
+
+
+use ACSEO\FormFeatureGeneratorBundle\Features\Context\ACSEOFeatureContext;
+
+//
+
+/**
+ * Feature context.
+ */
+class FeatureContext extends ACSEOFeatureContext //MinkContext if you want to test web
+//                   implements KernelAwareInterface
+{
+    
+    /**
+     * Initializes context with parameters from behat.yml.
+     *
+     * @param array $parameters
+     */
+    public function __construct(array $parameters)
+    {
+        parent::__construct($parameters,__DIR__);
+    }
+}

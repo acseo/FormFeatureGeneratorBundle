@@ -1,0 +1,3 @@
+acseo_form_feature_generator_homepage:
+    path:  /hello/{name}
+    defaults: { _controller: ACSEOFormFeatureGeneratorBundle:Default:index }
