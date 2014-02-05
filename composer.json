@@ -12,7 +12,7 @@
         {
             "name": "Nicolas Potier",
             "email": "Nicolas.Potier@acseo-conseil.fr"
-        },
+        }
     ],
     "require": {
         "php": ">=5.3.2",
