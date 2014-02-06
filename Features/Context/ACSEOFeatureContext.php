@@ -157,19 +157,17 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
             $buttonName = $this->fillFormAndPressButton();
 
             $this->getSession()->wait(1000);
-            if ($this->dataTable['submitUrl']!="") {
-                if ($this->getSession()->getCurrentUrl()== $this->dataTable['submitUrl']) {
-                    $this->testError = true;
-                } else {
-                    $this->out->writeln("<error>Error du submit Url (current url: ".$this->getSession()->getCurrentUrl().")</error>");
-                    $this->testError = false;
-                }
-            }
             if ($this->error == true) {
                 $this->exportCSVFileWithHeader($file,true);
                 $this->out->writeln("<error>Erreur sur le header verifié les champs a inserer</error>");
                 $this->out->writeln("<info>Géneration du nouveau fichier ".$this->filename." avec le header convenable</info>");
                 break;
+            }
+            if ($this->dataTable['submitUrl']!="") {
+                if ($this->getSession()->getCurrentUrl()!= $this->dataTable['submitUrl']) {
+                    $this->out->writeln("<error>Error in submit url ( the current submit url is: ".$this->getSession()->getCurrentUrl().")</error>");
+                    $this->testError = false;
+                }
             }
             $classHasError = array_key_exists('classHasError', $this->dataTable) && $this->dataTable['classHasError']!="" ? $this->dataTable['classHasError'] : null;
             if ($classHasError != null) {
@@ -290,22 +288,28 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
                     }
                 }
                 if (!$this->error && !in_array($type, $arrayTypeNotExist)) {
-                    if ($type == "text") {
-                        $this->fillField($name, $this->dataTable[$name]);
-                    } elseif ($type =="password") {
-                        $this->fillField($name, $this->dataTable[$name]);
-                    } elseif ($type =="email") {
-                        $this->fillField($name, $this->dataTable[$name]);
-                    } elseif ($type == "radio") {
-                        if($input->getAttribute("value") == $this->dataTable[$name])
-                            $input->check();
-                    } elseif ($type == "checkbox") {
-                        if($this->dataTable[$name]== 1)
-                            $this->checkOption($name);
-                    } elseif ($type == "submit") {
-                        $submitButton = $input;
-                    } elseif ($type == "file") {
-                        $input->attachFile($this->dataTable[$name]);
+                    if ($input->isVisible()) {
+                        if ($type == "text") {
+                            $this->fillField($name, $this->dataTable[$name]);
+                        } elseif ($type =="password") {
+                            $this->fillField($name, $this->dataTable[$name]);
+                        } elseif ($type =="email") {
+                            $this->fillField($name, $this->dataTable[$name]);
+                        } elseif ($type == "radio") {
+                            if($input->getAttribute("value") == $this->dataTable[$name])
+                                $input->check();
+                        } elseif ($type == "checkbox") {
+                            if($this->dataTable[$name]== 1)
+                                $this->checkOption($name);
+                        } elseif ($type == "submit") {
+                            $submitButton = $input;
+                        } elseif ($type == "file") {
+                            $input->attachFile($this->dataTable[$name]);
+                        }
+                    }else {
+                        if ($this->dataTable[$name]!="") {
+                            $this->testError = false;
+                        }
                     }
                 }
             }
@@ -321,8 +325,14 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
                     $this->error = true;
                 }
             }
-            if(!$this->error && $this->dataTable[$name]!="")
-                $this->selectOption($name, $this->dataTable[$name]);
+            if(!$this->error && $this->dataTable[$name]!="") {
+                if ($select->isVisible()) {
+                    $this->selectOption($name, $this->dataTable[$name]);
+                }else {
+                    if ($this->dataTable[$name]!="")
+                        $this->testError = false;
+                }
+            }
         }
         $textareas = $form->findAll("css", "textarea");
         foreach ($textareas as $textarea) {
@@ -335,8 +345,15 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
                     $this->error = true;
                 }
             }
-            if(!$this->error && $this->dataTable[$name]!="")
-                $this->fillField($name, $this->dataTable[$name]);
+            if(!$this->error && $this->dataTable[$name]!=""){
+                if ($textarea->isVisible()){
+                    $this->fillField($name, $this->dataTable[$name]);
+                }else {
+                    if ($this->dataTable[$name] != "") {
+                        $this->testError = false;
+                    }
+                }
+            }
         }
         if ($submitButton=="") {
             $buttons = $form->find("css", "button");
@@ -390,6 +407,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
     protected function exportCSVFileWithHeader($file, $bakupCopy)
     {
         $listofAllInput = $this->getListInputName($bakupCopy);
+        $listofAllInput = array_filter($listofAllInput);
         for ($i = 7; $i>=0; $i--) {
             array_unshift($listofAllInput, $this->keyData[$i]);
         }
