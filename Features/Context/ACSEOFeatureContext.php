@@ -308,7 +308,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
                         } elseif ($type == "file") {
                             $input->attachFile($this->dataTable[$name]);
                         }
-                    }else {
+                    } else {
                         if ($this->dataTable[$name]!="") {
                             array_push($this->visibleErrors, $name);
                             $this->testError = false;
@@ -331,7 +331,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
             if (!$this->error && $this->dataTable[$name]!="") {
                 if ($select->isVisible()) {
                     $this->selectOption($name, $this->dataTable[$name]);
-                }else {
+                } else {
                     if ($this->dataTable[$name]!="") {
                         array_push($this->visibleErrors, $name);
                         $this->testError = false;
@@ -353,7 +353,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
             if (!$this->error && $this->dataTable[$name]!="") {
                 if ($textarea->isVisible()) {
                     $this->fillField($name, $this->dataTable[$name]);
-                }else {
+                } else {
                     if ($this->dataTable[$name] != "") {
                         array_push($this->visibleErrors, $name);
                         $this->testError = false;
