@@ -37,6 +37,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
     private $dataTable;
     private $filename;
     private $rowErrors;
+    private $visibleErrors;
     private $isConnected;
 
     /**
@@ -52,6 +53,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
         $this->error=false;
         $this->testError = true;
         $this->rowErrors = array();
+        $this->visibleErrors = array();
         $this->isConnected = false;
     }
 
@@ -111,8 +113,8 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
      */
     public function iShouldCheckResult()
     {
-        if (count($this->rowErrors) > 0) {
-            throw new ExpectationException("Errors in lines: ".implode(",", $this->rowErrors).".", $this->getSession());
+        if (count($this->rowErrors) > 0 || count($this->visibleErrors) > 0 ) {
+            throw new ExpectationException("Errors in lines: ".implode(",", $this->rowErrors)."\n\nError visible input :\n\t".implode("\n\t", $this->visibleErrors).".", $this->getSession());
         }
     }
 
@@ -127,7 +129,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
     {
         $data = fgetcsv($this->fp);
         $this->combineKeyAndData($this->keyData, $data[0]);
-        if ($this->dataTable['username'] != "" && $this->dataTable['password'] != "") {
+        if ($this->dataTable['loginUrl'] != "" && $this->dataTable['username'] != "" && $this->dataTable['password'] != "") {
             $this->clientConnect();
         }
         $this->visit($this->dataTable['getUrl']);
@@ -188,7 +190,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
                     }
                 }
             }
-            if($this->testError == false)
+            if ($this->testError == false)
                 array_push($this->rowErrors, $row);
         }
         $this->visit("/");
@@ -218,7 +220,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
         $form = null;
         if ($this->dataTable['loginFormIdOrClass'] != "") {
             $form = $this->getSession()->getPage()->find("css", "form#".$this->dataTable['loginFormIdOrClass']);
-            if($form == NULL)
+            if ($form == NULL)
                 $form = $this->getSession()->getPage()->find("css", "form.".$this->dataTable['loginFormIdOrClass']);
         } else {
             $form = $this->getSession()->getPage()->find("css", "form");
@@ -234,10 +236,10 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
         foreach ($inputs as $input) {
             $name = $input->getAttribute("name");
             $type = strtolower($input->getAttribute("type"));
-            if (strpos($name, 'username')!==false && $type = "text") {
+            if (preg_match("/(username|email)/i", $name) || $type == "email") {
                 $this->fillField($name, $this->dataTable['username']);
             }
-            if (strpos($name, 'password')!==false && $type = "password") {
+            if (strpos($name, 'password')!==false && $type == "password") {
                 $this->fillField($name, $this->dataTable['password']);
             }
             if ($type == "submit") {
@@ -262,13 +264,13 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
         $form = null;
         if ($this->dataTable['formIdOrClass'] != "") {
             $form = $this->getSession()->getPage()->find("css", "form#".$this->dataTable['formIdOrClass']);
-            if($form == NULL)
+            if ($form == NULL)
                 $form = $this->getSession()->getPage()->find("css", "form.".$this->dataTable['formIdOrClass']);
         } else {
             $form = $this->getSession()->getPage()->find("css", "form");
         }
         if ($form == null) {
-            $this->out->writeln("<error>submit form not found</error>");
+            $this->out->writeln("<error>Form not found.</error>");
 
             return 0;
         }
@@ -296,10 +298,10 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
                         } elseif ($type =="email") {
                             $this->fillField($name, $this->dataTable[$name]);
                         } elseif ($type == "radio") {
-                            if($input->getAttribute("value") == $this->dataTable[$name])
+                            if ($input->getAttribute("value") == $this->dataTable[$name])
                                 $input->check();
                         } elseif ($type == "checkbox") {
-                            if($this->dataTable[$name]== 1)
+                            if ($this->dataTable[$name]== 1)
                                 $this->checkOption($name);
                         } elseif ($type == "submit") {
                             $submitButton = $input;
@@ -308,7 +310,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
                         }
                     }else {
                         if ($this->dataTable[$name]!="") {
-                            var_dump("input");
+                            array_push($this->visibleErrors, $name);
                             $this->testError = false;
                         }
                     }
@@ -326,12 +328,12 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
                     $this->error = true;
                 }
             }
-            if(!$this->error && $this->dataTable[$name]!="") {
+            if (!$this->error && $this->dataTable[$name]!="") {
                 if ($select->isVisible()) {
                     $this->selectOption($name, $this->dataTable[$name]);
                 }else {
                     if ($this->dataTable[$name]!="") {
-                        var_dump("select");
+                        array_push($this->visibleErrors, $name);
                         $this->testError = false;
                     }
                 }
@@ -348,12 +350,12 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
                     $this->error = true;
                 }
             }
-            if(!$this->error && $this->dataTable[$name]!=""){
-                if ($textarea->isVisible()){
+            if (!$this->error && $this->dataTable[$name]!="") {
+                if ($textarea->isVisible()) {
                     $this->fillField($name, $this->dataTable[$name]);
                 }else {
                     if ($this->dataTable[$name] != "") {
-                        var_dump("select");
+                        array_push($this->visibleErrors, $name);
                         $this->testError = false;
                     }
                 }
@@ -363,7 +365,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
             $buttons = $form->find("css", "button");
             foreach ($buttons as $button) {
                 $type = strtolower($button->getAttribute("type"));
-                if($type == "submit")
+                if ($type == "submit")
                     $submitButton = $button;
             }
         }
@@ -375,7 +377,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
         $form = null;
         if ($this->dataTable['formIdOrClass'] != "") {
             $form = $this->getSession()->getPage()->find("css", "form#".$this->dataTable['formIdOrClass']);
-            if($form == NULL)
+            if ($form == NULL)
                 $form = $this->getSession()->getPage()->find("css", "form.".$this->dataTable['formIdOrClass']);
         } else {
             $form = $this->getSession()->getPage()->find("css", "form");
@@ -391,7 +393,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
         foreach ($inputs as $input) {
             $name = $input->getAttribute("name");
             $type = strtolower($input->getAttribute("type"));
-                if(!in_array($type, $arrayTypeNotExist))
+                if (!in_array($type, $arrayTypeNotExist))
                     array_push($listAllInputs, $name);
         }
         $selects = $form->findAll("css", "select");
@@ -417,7 +419,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
         }
         array_push($listofAllInput, "result");
         $pathFile = $this->importFileDir.$this->filename;
-        if($bakupCopy)
+        if ($bakupCopy)
             copy($pathFile, $pathFile.'.bak');
         $writeFile = fopen($pathFile, "w");
         $data = array_slice($this->dataTable, 0,8);
