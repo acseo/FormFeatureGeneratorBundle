@@ -83,7 +83,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
             $this->fp = fopen($file, 'r');
             $filename = explode("/", $file);
             $this->filename = end($filename);
-            $this->out->writeln("Lire le fichier: ".$this->filename."");
+            $this->out->writeln("Reading the file: ".$this->filename."");
             $this->initKeyDataFromCSVFile($file);
             $this->verifyCSVFile($file);
             fclose($this->fp);
@@ -99,7 +99,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
             $this->fp = fopen($file, 'r');
             $filename = explode("/", $file);
             $this->filename = end($filename);
-            $this->out->writeln("Lire le fichier: ".$this->filename."");
+            $this->out->writeln("Reading the file: ".$this->filename."");
             $this->initKeyDataFromCSVFile($file);
             $this->writeHeaderInCSVFile($file);
             fclose($this->fp);
@@ -140,7 +140,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
         while (($data = fgetcsv($this->fp)) !== FALSE) {
             $this->testError = true;
             $row++;
-            $this->out->writeln("<comment>Test du ligne ".$row."</comment>");
+            $this->out->writeln("<comment>Testing line: ".$row."</comment>");
 // Get the data row and merge the keyData as key for dataTable
             $this->combineKeyAndData($this->keyData, $data[0]);
 // Create a new client to browse the application
@@ -159,8 +159,8 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
             $this->getSession()->wait(1000);
             if ($this->error == true) {
                 $this->exportCSVFileWithHeader($file,true);
-                $this->out->writeln("<error>Erreur sur le header verifié les champs a inserer</error>");
-                $this->out->writeln("<info>Géneration du nouveau fichier ".$this->filename." avec le header convenable</info>");
+                $this->out->writeln("<error>Error in CSV file first line.</error>");
+                $this->out->writeln("<info>Backup original file and generate a new file called ".$this->filename." with the right input name.</info>");
                 break;
             }
             if ($this->dataTable['submitUrl']!="") {
@@ -174,15 +174,15 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
                 $errors = $this->getSession()->getPage()->findAll("css", ".".$classHasError);
                 $formOK = count($errors) > 0 ? "false" : "true";
                 if ($formOK == strtolower(end($this->dataTable)) && $formOK == "true") {
-                    $this->out->writeln("<bg=green;fg=black>La form est ".$formOK." et le result dans le fichier est ".end($this->dataTable)."</bg=green;fg=black>");
+                    $this->out->writeln("<bg=green;fg=black>The result is ".$formOK." and the result in CSV file is ".end($this->dataTable)."</bg=green;fg=black>");
                 } elseif ($formOK == strtolower(end($this->dataTable)) && $formOK == "false") {
-                    $this->out->writeln("<bg=yellow;fg=black>La form est ".$formOK." et le result dans le fichier est ".end($this->dataTable)."</bg=yellow;fg=black>");
+                    $this->out->writeln("<bg=yellow;fg=black>The result is ".$formOK." and the result in CSV file is ".end($this->dataTable)."</bg=yellow;fg=black>");
                 } else {
                     $this->testError = false;
-                    $this->out->writeln("<error>La form est ".$formOK." et le result dans le fichier est ".end($this->dataTable)."</error>");
+                    $this->out->writeln("<error>The result is ".$formOK." and the result in CSV file is ".end($this->dataTable)."</error>");
                 }
                 if (count($errors)>0) {
-                    $this->out->writeln("Les messages d'erreurs sont:");
+                    $this->out->writeln("Message error of the class ".$classHasError.":");
                     foreach ($errors as $error) {
                         $this->out->writeln("<error>".$error->getText()."</error>"."\n");
                     }
@@ -308,6 +308,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
                         }
                     }else {
                         if ($this->dataTable[$name]!="") {
+                            var_dump("input");
                             $this->testError = false;
                         }
                     }
@@ -329,8 +330,10 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
                 if ($select->isVisible()) {
                     $this->selectOption($name, $this->dataTable[$name]);
                 }else {
-                    if ($this->dataTable[$name]!="")
+                    if ($this->dataTable[$name]!="") {
+                        var_dump("select");
                         $this->testError = false;
+                    }
                 }
             }
         }
@@ -350,6 +353,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
                     $this->fillField($name, $this->dataTable[$name]);
                 }else {
                     if ($this->dataTable[$name] != "") {
+                        var_dump("select");
                         $this->testError = false;
                     }
                 }
