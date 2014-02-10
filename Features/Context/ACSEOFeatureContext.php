@@ -22,9 +22,9 @@ use Symfony\Component\Console\Output\ConsoleOutput;
  * Feature context.
  */
 class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test web
-//                   implements KernelAwareInterface
+                  implements KernelAwareInterface
 {
-    private $kernel;
+    protected $kernel;
     private $parameters;
     private $out;
     private $importFileDir;
@@ -34,7 +34,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
     private $fp;
     private $error;
     private $testError;
-    private $dataTable;
+    protected  $dataTable;
     private $filename;
     private $rowErrors;
     private $visibleErrors;
@@ -148,17 +148,19 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
 // Create a new client to browse the application
             if ($this->dataTable['loginUrl']!="" && $this->isConnected == false) {
                 $boolLoggedIn = $this->clientConnect();
-                if ($boolLoggedIn == false) {
-                    $this->out->writeln("<error>Authentification refused</erro>");
+                if ($boolLoggedIn == false && $boolLoggedIn != null) {
+                    $this->out->writeln("<error>Authentification refused</error>");
                     continue;
                 } else {
                     $this->isConnected = true;
                 }
             }
             $this->visit($this->dataTable['getUrl']);
-            $buttonName = $this->fillFormAndPressButton();
+            $form = $this->getForm();
+            $this->fillForm($form);
+            $this->pressSubmitButton($form);
 
-            $this->getSession()->wait(1000);
+            $this->getSession()->wait(10000);
             if ($this->error == true) {
                 $this->exportCSVFileWithHeader($file,true);
                 $this->out->writeln("<error>Error in CSV file first line.</error>");
@@ -208,10 +210,9 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
         $loginUrl = $this->getSession()->getCurrentUrl();
         $buttonName = $this->fillLoginFormAndPressButton();
         $loggedIn = true;
-        if ($loginUrl == $this->getSession()->getCurrentUrl()) {
+        if ($loginUrl === $this->getSession()->getCurrentUrl()) {
             $loggedIn=false;
         }
-
         return $loggedIn;
     }
 
@@ -258,9 +259,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
         }
         $submitButton->press();
     }
-
-    protected function fillFormAndPressButton()
-    {
+    protected function getForm(){
         $form = null;
         if ($this->dataTable['formIdOrClass'] != "") {
             $form = $this->getSession()->getPage()->find("css", "form#".$this->dataTable['formIdOrClass']);
@@ -271,9 +270,13 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
         }
         if ($form == null) {
             $this->out->writeln("<error>Form not found.</error>");
-
+        
             return 0;
         }
+        return $form;
+    }
+    protected function fillForm($form)
+    {
         $inputs = $form->findAll("css", "input");
         $arrayTypeNotExist = array('submit', 'hidden');
         $submitButton="";
@@ -292,7 +295,7 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
                 if (!$this->error && !in_array($type, $arrayTypeNotExist)) {
                     if ($input->isVisible()) {
                         if ($type == "text") {
-                            $this->fillField($name, $this->dataTable[$name]);
+                            $input->setValue( $this->dataTable[$name]);
                         } elseif ($type =="password") {
                             $this->fillField($name, $this->dataTable[$name]);
                         } elseif ($type =="email") {
@@ -303,8 +306,6 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
                         } elseif ($type == "checkbox") {
                             if ($this->dataTable[$name]== 1)
                                 $this->checkOption($name);
-                        } elseif ($type == "submit") {
-                            $submitButton = $input;
                         } elseif ($type == "file") {
                             $input->attachFile($this->dataTable[$name]);
                         }
@@ -314,6 +315,13 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
                             $this->testError = false;
                         }
                     }
+                }
+            } else {
+                $id = $input->getAttribute("id");
+                if (array_key_exists($id, $this->dataTable) && $this->dataTable[$id] != "") {
+                    $this->fillField($id,$this->dataTable[$id]);
+                    $this->getSession()->wait(3000);
+                    $this->getSession()->getPage()->find("css",".token-input-selected-dropdown-item-bootstrap")->click();
                 }
             }
         }
@@ -361,14 +369,8 @@ class ACSEOFeatureContext extends MinkContext //MinkContext if you want to test 
                 }
             }
         }
-        if ($submitButton=="") {
-            $buttons = $form->find("css", "button");
-            foreach ($buttons as $button) {
-                $type = strtolower($button->getAttribute("type"));
-                if ($type == "submit")
-                    $submitButton = $button;
-            }
-        }
+    }
+    protected function pressSubmitButton($form){
         $form->find("css", "[type='submit']")->press();
     }
 
