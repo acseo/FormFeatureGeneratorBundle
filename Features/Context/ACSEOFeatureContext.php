@@ -195,17 +195,14 @@ class ACSEOFeatureContext extends MinkContext
             $this->out->writeln("<comment>Testing line: ".$row."</comment>");
             // Get the data row and merge the keyData as key for dataTable
             $this->combineKeyAndData($this->keyData, $data[0]);
-            // Create a new client to browse the application
-            // TODO: Delete the session to reconnect on each row
 
+            // Create a new client to browse the application
             if ($this->dataTable['loginUrl']!="" && $this->isConnected == false) {
                 $boolLoggedIn = $this->clientConnect();
 
                 if ($boolLoggedIn == false && $boolLoggedIn != null) {
                     $this->out->writeln("<error>Authentification refused</error>");
                     continue;
-                } else {
-                    $this->isConnected = true;
                 }
             }
             $this->visit($this->dataTable['getUrl']);
@@ -227,10 +224,7 @@ class ACSEOFeatureContext extends MinkContext
             if ($this->testError == false) {
                 array_push($this->rowErrors, $row);
             }
-            $this->getSession()->wait(1000);
-//             $this->getSession()->reset();
-//             $this->getSession()->stop();
-            $this->getSession()->wait(1000);
+            $this->clientLogout();
         }
     }
 
@@ -299,6 +293,21 @@ class ACSEOFeatureContext extends MinkContext
         }
 
         return $loggedIn;
+    }
+
+    /**
+     * Search for logout button and click it
+     */
+    protected function clientLogout()
+    {
+        $links = $this->getSession()->getPage()->findAll("css","a");
+        foreach ($links as $link) {
+            $href = $link->getAttribute("href");
+            if (preg_match("/(logout)/i", $href)) {
+                $this->visit($href);
+                break;
+            }
+        }
     }
 
     /**
@@ -417,11 +426,11 @@ class ACSEOFeatureContext extends MinkContext
                     } elseif ($type == "file") {
                         $input->attachFile($this->dataTable[$name]);
                     }
-//                 } else {
-//                     if (in_array($name, $this->dataTable) && $this->dataTable[$name]!="") {
-//                         array_push($this->visibleErrors, $name);
-//                         $this->testError = false;
-//                     }
+                } else {
+                    if (in_array($name, $this->dataTable) && $this->dataTable[$name]!="") {
+                        array_push($this->visibleErrors, $name);
+                        $this->testError = false;
+                    }
                 }
 
                 if ($fillById && array_key_exists($name, $this->dataTable) && $this->dataTable[$name] != "") {
