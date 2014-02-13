@@ -47,3 +47,39 @@ LOGINFORMID: id/class of your form to login
 CLASSERROR: Class of your message error.
 ```
 The command will create **behat.yml** in your project directory. You have to put a value for **base_url**.
+
+####Overload function
+
+You can overload function by create your own function in your feature class
+
+```bash
+// YourBundle/Features/Context/FeatureContext
+protected function clientConnect ()
+{
+    parent::clientConnect();
+    // Your code
+}
+```
+####Use entity manager
+
+Also you can execute query from your feature.
+
+Example:
+```bash
+// YourBundle/Features/Context/FeatureContext
+protected function clientConnect ()
+{
+    $em = $this->kernel->getContainer()->get('doctrine');
+    $user = $em->getRepository('YourBundleName:User')->find(1);
+    // manage your user
+}
+```
+#Test your form
+In `YourBundleName/Features/Data/` there is a CSV file created by the command `acseo:generate:feature ...`
+
+You have to fill the CSV file by value and execute the command below to test your form
+``` bash
+$ bin/behat src/YourBundleName/Features/demoTest.feature
+```
+
+You can create your own feature in `/Features` directory.
