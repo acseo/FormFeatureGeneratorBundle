@@ -2,10 +2,11 @@ default:
   extensions:
     Behat\Symfony2Extension\Extension:
       mink_driver: true
-#      kernel:
-#        env: test
-#        debug: true
+      kernel: 
+        env: test
+        debug: true
     Behat\MinkExtension\Extension:
+      browser_name: chrome
       default_session: 'selenium2'
       base_url: 
       selenium2: ~

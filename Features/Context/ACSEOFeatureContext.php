@@ -12,12 +12,11 @@ use Behat\Gherkin\Node\PyStringNode,
     Behat\Gherkin\Node\TableNode;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
-
 /**
  * Feature context.
  * @Author Safwan Ghamrawi <safwan.ghamrawi@acseo-conseil.fr>
  */
-class ACSEOFeatureContext extends MinkContext 
+class ACSEOFeatureContext extends MinkContext
                   implements KernelAwareInterface
 {
     /**
@@ -25,45 +24,46 @@ class ACSEOFeatureContext extends MinkContext
      */
     /* Kernel by Mink */
     protected $kernel;
-    
+
     /* Parameters by Mink */
-    private $parameters;
+    protected $parameters;
 
     /* output console to write on console */
-    private $out;
+    protected $out;
 
     /* The directory of import CSV files */
-    private $importFileDir;
+    protected $importFileDir;
 
     /* List of CSV files */
-    private $csvFiles;
-    
+    protected $csvFiles;
+
     /* The file open */
-    private $fp;
-    
+    protected $fp;
+
     /* Error in header */
-    private $headerCSVError;
-    
+    protected $headerCSVError;
+
     /* Error in the test  */
-    private $testError;
-    
+    protected $testError;
+
     /* All data of table */
-    protected  $dataTable;
-    
+    protected $dataTable;
+
     /* CSV file name */
-    private $filename;
-    
+    protected $filename;
+
     /* Array of rows numbers has error */
-    private $rowErrors;
-    
+    protected $rowErrors;
+
     /* Array of name input if has value and invisible */
-    private $visibleErrors;
-    
+    protected $visibleErrors;
+
     /* Is user connected */
-    private $isConnected;
-    
+    protected $isConnected;
+
     /* Type of input */
-    private $arrayTypeNotExist;
+    protected $arrayTypeNotExist;
+
     /**
      * Initializes context with parameters from behat.yml.
      *
@@ -140,15 +140,18 @@ class ACSEOFeatureContext extends MinkContext
     {
         $throw = false;
         $message = "";
+
         if (count($this->rowErrors) > 0) {
             $message = $message."Errors in lines: ".implode(",", $this->rowErrors);
             $throw = true;
         }
+
         if (count($this->visibleErrors) > 0) {
             $message = $message."\n\nError visible input :\n\t".implode("\n\t", $this->visibleErrors);
             $throw =true;
         }
         $message = $message.".";
+
         if ($throw) {
             throw new ExpectationException($message, $this->getSession());
         }
@@ -157,7 +160,7 @@ class ACSEOFeatureContext extends MinkContext
     /**
      * Initialise Key for Data Table
      */
-    private function initKeyDataFromCSVFile()
+    protected function initKeyDataFromCSVFile()
     {
         $data = fgetcsv($this->fp);
         $this->keyData = explode(";", $data[0]);
@@ -168,12 +171,13 @@ class ACSEOFeatureContext extends MinkContext
      * get all input of form
      * create the CSV file with all input in form
      */
-    private function writeHeaderInCSVFile($file)
+    protected function writeHeaderInCSVFile($file)
     {
         $data = fgetcsv($this->fp);
         $this->combineKeyAndData($this->keyData, $data[0]);
+
         if ($this->dataTable['loginUrl'] != "" && $this->dataTable['username'] != "" && $this->dataTable['password'] != "") {
-            $this->clientConnect();
+            $boolLoggedIn = $this->clientConnect();
         }
         $this->visit($this->dataTable['getUrl']);
         $this->exportCSVFileWithHeader($file,false);
@@ -182,7 +186,7 @@ class ACSEOFeatureContext extends MinkContext
     /**
      * Verify form from CSV file
      */
-    private function verifyCSVFile($file)
+    protected function verifyCSVFile($file)
     {
         $row = 0;
         while (($data = fgetcsv($this->fp)) !== FALSE) {
@@ -193,15 +197,16 @@ class ACSEOFeatureContext extends MinkContext
             $this->combineKeyAndData($this->keyData, $data[0]);
             // Create a new client to browse the application
             // TODO: Delete the session to reconnect on each row
-            if ($this->dataTable['loginUrl']!="" /*&& $this->isConnected == false*/) {
+
+            if ($this->dataTable['loginUrl']!="" && $this->isConnected == false) {
                 $boolLoggedIn = $this->clientConnect();
+
                 if ($boolLoggedIn == false && $boolLoggedIn != null) {
                     $this->out->writeln("<error>Authentification refused</error>");
                     continue;
-                } 
-//                 else {
-//                     $this->isConnected = true;
-//                 }
+                } else {
+                    $this->isConnected = true;
+                }
             }
             $this->visit($this->dataTable['getUrl']);
             $form = $this->getForm($this->dataTable['formIdOrClass']);
@@ -215,30 +220,34 @@ class ACSEOFeatureContext extends MinkContext
                 break;
             }
             $this->verifySubmitUrl();
-            
+
             $classErrorName = array_key_exists('classHasError', $this->dataTable) && $this->dataTable['classHasError']!="" ? $this->dataTable['classHasError'] : null;
             $this->verifyErrorMessage($classErrorName);
-            if ($this->testError == false)
+
+            if ($this->testError == false) {
                 array_push($this->rowErrors, $row);
+            }
+            $this->getSession()->wait(1000);
+//             $this->getSession()->reset();
+//             $this->getSession()->stop();
+            $this->getSession()->wait(1000);
         }
-        var_dump("here");
-//         $this->getSession()->reset();
-//         $this->getSession()->stop();
     }
-    
+
     /**
      * After submit, Compare current url and the submit url in CSV file.
      */
     protected function verifySubmitUrl()
     {
         if ($this->dataTable['submitUrl']!="") {
+
             if ($this->getSession()->getCurrentUrl()!= $this->dataTable['submitUrl']) {
                 $this->out->writeln("<error>Error in submit url ( the current submit url is: ".$this->getSession()->getCurrentUrl().")</error>");
                 $this->testError = false;
             }
         }
     }
-    
+
     /**
      * Search all error message by the class name
      */
@@ -247,6 +256,7 @@ class ACSEOFeatureContext extends MinkContext
         if ($classErrorName != null) {
             $errors = $this->getSession()->getPage()->findAll("css", ".".$classErrorName);
             $formOK = count($errors) > 0 ? "false" : "true";
+
             if ($formOK == strtolower(end($this->dataTable)) && $formOK == "true") {
                 $this->out->writeln("<bg=green;fg=black>The result is ".$formOK." and the result in CSV file is ".end($this->dataTable)."</bg=green;fg=black>");
             } elseif ($formOK == strtolower(end($this->dataTable)) && $formOK == "false") {
@@ -255,14 +265,17 @@ class ACSEOFeatureContext extends MinkContext
                 $this->testError = false;
                 $this->out->writeln("<error>The result is ".$formOK." and the result in CSV file is ".end($this->dataTable)."</error>");
             }
+
             if (count($errors)>0) {
                 $this->out->writeln("Message error of the class ".$classErrorName.":");
+
                 foreach ($errors as $error) {
                     $this->out->writeln("<error>".$error->getText()."</error>"."\n");
                 }
             }
         }
     }
+
     /**
      * Create data Table by combine key and data
      */
@@ -284,6 +297,7 @@ class ACSEOFeatureContext extends MinkContext
         if ($loginUrl === $this->getSession()->getCurrentUrl()) {
             $loggedIn=false;
         }
+
         return $loggedIn;
     }
 
@@ -293,18 +307,22 @@ class ACSEOFeatureContext extends MinkContext
     protected function fillLoginFormAndPressButton()
     {
         $form = $this->getForm($this->dataTable['loginFormIdOrClass']);
-        
+
         $inputs = $form->findAll("css", "input");
         $submitButton = null;
+
         foreach ($inputs as $input) {
             $name = $input->getAttribute("name");
             $type = strtolower($input->getAttribute("type"));
+
             if (preg_match("/(username|email)/i", $name) || $type == "email") {
                 $this->fillField($name, $this->dataTable['username']);
             }
+
             if (strpos($name, 'password')!==false && $type == "password") {
                 $this->fillField($name, $this->dataTable['password']);
             }
+
             if ($type == "submit") {
                 $submitButton = $input;
             }
@@ -314,6 +332,7 @@ class ACSEOFeatureContext extends MinkContext
             $buttons = $this->getSession()->getPage()->findAll("css", "button");
             foreach ($buttons as $button) {
                 $type = strtolower($button->getAttribute("type"));
+
                 if ($type == "submit") {
                     $submitButton = $button;
                 }
@@ -325,8 +344,10 @@ class ACSEOFeatureContext extends MinkContext
     /**
      * Get form by ID or Class name
      */
-    protected function getForm($formIdClass){
+    protected function getForm($formIdClass)
+    {
         $form = null;
+
         if ($formIdClass != "") {
             $form = $this->getSession()->getPage()->find("css", "form#".$formIdClass);
             if ($form == NULL)
@@ -334,19 +355,16 @@ class ACSEOFeatureContext extends MinkContext
         } else {
             $form = $this->getSession()->getPage()->find("css", "form");
         }
+
         if ($form == null) {
             $this->out->writeln("<error>Form not found.</error>");
+
             return 0;
         }
+
         return $form;
     }
 
-
-    public function fillAcseomedecin()
-    {
-        $input->setValue( $this->dataTable[$name]);
-        $this->getSession()->wait(15000);
-    }
     /**
      * Fill the form
      */
@@ -356,11 +374,11 @@ class ACSEOFeatureContext extends MinkContext
         $this->fillAllSelectInForm($form);
         $this->fillAllTextareaInForm($form);
     }
-    
+
     /**
      * Fill all input in form $form
      */
-    protected function fillAllInputInForm ($form)
+    protected function fillAllInputInForm($form)
     {
         $inputs = $form->findAll("css", "input");
         $arrayTypeText = array("text","password","email","number","date","datetime","tel","time","url");
@@ -368,23 +386,26 @@ class ACSEOFeatureContext extends MinkContext
             $fillById = false;
             $name = $input->getAttribute("name");
             $type = strtolower($input->getAttribute("type"));
-        
+
             if ($name == NULL) {
                 $name = $input->getAttribute("id");
                 $fillById = true;
             }
-        
-            if (!in_array($type, $this->arrayTypeNotExist)) {
+
+            if (!in_array($type, $this->arrayTypeNotExist) && !$fillById) {
                 $this->isNameExistInCSVFile($name);
             }
+
             if (!$this->headerCSVError && !in_array($type, $this->arrayTypeNotExist)) {
                 $filterName = $this->filterNameFunction($name);
+
+                // Call to user methode fillName, (Name is the name of the input by removing all special characters and capitalize the lettre afeter each special character )
                 if (method_exists($this, "fill".ucfirst($filterName))) {
                     call_user_func_array(array($this, "fill".ucfirst($filterName)), array($this->dataTable[$name]));
                     continue;
                 }
+
                 if ($input->isVisible()) {
-                    // TODO: create a specific fill method for each input : fillText(), fillPassword, etc.
                     if (in_array($type, $arrayTypeText)) {
                         $this->fillField($name, $this->dataTable[$name]);
                     } elseif ($type == "radio") {
@@ -396,12 +417,13 @@ class ACSEOFeatureContext extends MinkContext
                     } elseif ($type == "file") {
                         $input->attachFile($this->dataTable[$name]);
                     }
-                } else {
-                    if (in_array($name, $this->dataTable) && $this->dataTable[$name]!="") {
-                        array_push($this->visibleErrors, $name);
-                        $this->testError = false;
-                    }
+//                 } else {
+//                     if (in_array($name, $this->dataTable) && $this->dataTable[$name]!="") {
+//                         array_push($this->visibleErrors, $name);
+//                         $this->testError = false;
+//                     }
                 }
+
                 if ($fillById && array_key_exists($name, $this->dataTable) && $this->dataTable[$name] != "") {
                     $this->getSession()->wait(3000);
                     $this->getSession()->getPage()->find("css",".token-input-selected-dropdown-item-bootstrap")->click();
@@ -409,25 +431,31 @@ class ACSEOFeatureContext extends MinkContext
             }
         }
     }
+
     /**
      * Fill all Select in form
      */
-    protected function fillAllSelectInForm ($form)
+    protected function fillAllSelectInForm($form)
     {
         $selects = $form->findAll("css", "select");
+
         foreach ($selects as $select) {
             $name = $select->getAttribute("name");
             $this->isNameExistInCSVFile($name);
-            
+
             $filterName = $this->filterNameFunction($name);
+
             if (method_exists($this, "fill".ucfirst($filterName))) {
                 call_user_func_array(array($this, "fill".ucfirst($filterName)), array($this->dataTable[$name]));
                 continue;
             }
+
             if (!$this->headerCSVError && $this->dataTable[$name]!="") {
+
                 if ($select->isVisible()) {
                     $this->selectOption($name, $this->dataTable[$name]);
                 } else {
+
                     if ($this->dataTable[$name]!="") {
                         array_push($this->visibleErrors, $name);
                         $this->testError = false;
@@ -436,26 +464,30 @@ class ACSEOFeatureContext extends MinkContext
             }
         }
     }
-    
+
     /**
      * Fill all Textarea in form
      */
-    protected function fillAllTextareaInForm ($form)
+    protected function fillAllTextareaInForm($form)
     {
         $textareas = $form->findAll("css", "textarea");
         foreach ($textareas as $textarea) {
             $name = $textarea->getAttribute("name");
             $this->isNameExistInCSVFile($name);
-            
+
             $filterName = $this->filterNameFunction($name);
+
             if (method_exists($this, "fill".ucfirst($filterName))) {
                 call_user_func_array(array($this, "fill".ucfirst($filterName)), array($this->dataTable[$name]));
                 continue;
             }
+
             if (!$this->headerCSVError && $this->dataTable[$name]!="") {
+
                 if ($textarea->isVisible()) {
                     $this->fillField($name, $this->dataTable[$name]);
                 } else {
+
                     if ($this->dataTable[$name] != "") {
                         array_push($this->visibleErrors, $name);
                         $this->testError = false;
@@ -464,8 +496,11 @@ class ACSEOFeatureContext extends MinkContext
             }
         }
     }
-    
-    protected function filterNameFunction ($name)
+
+    /**
+     * Filter the name given by removing sepcial characters and upper the letter after.
+     */
+    protected function filterNameFunction($name)
     {
         $ptn = "/_[a-z]?/";
         $name = preg_replace('/\(|\[|\]|\(|-\)/','_',$name);
@@ -474,48 +509,46 @@ class ACSEOFeatureContext extends MinkContext
                 function ($matches) { return strtoupper(ltrim($matches[0], "_"));},
                 $name
             );
+
         return $result;
     }
+
     /**
      * Press the submit button in form
      */
-    protected function pressSubmitButton($form){
+    protected function pressSubmitButton($form)
+    {
         $form->find("css", "[type='submit']")->press();
     }
-    
+
     /**
      * Verify if name exist in CSV file
      */
     protected function isNameExistInCSVFile($name)
     {
         $nameTemp = $name;
-        if (!array_key_exists($nameTemp, $this->dataTable) && $nameTemp != "") {
-            preg_match_all('/\[([^\]]+)\]/', $nameTemp, $nameTemp); //recuperer juste le nom du input name (ex. acseo_form_enfant[nom] et on recupere nom)
-            $nameTemp = end($nameTemp[1]);
-            $data = fgetcsv($this->fp);
-            if (is_bool($nameTemp)) {
-//                 $this->headerCSVError = true;
-                return true;
-            }
-            if (!array_key_exists($nameTemp, $this->dataTable)) {
-                $this->headerCSVError = true;
-                return false;
-            }
+
+        if ($nameTemp != "" && !array_key_exists($nameTemp, $this->dataTable)) {
+            $this->headerCSVError = true;
+
+            return false;
         }
+
         return true;
     }
-    
+
     /**
-     * 
+     * Get the list of all field
      */
     protected function getListInputName($backupCopy)
     {
         $form = $this->getForm($this->dataTable['formIdOrClass']);
-        
+
         $listAllInputs = array();
         $inputs = $form->findAll("css", "input");
         foreach ($inputs as $input) {
             $name = $input->getAttribute("name");
+
             if ($name == NULL) {
                 $name = $input->getAttribute("id");
             }
@@ -526,6 +559,7 @@ class ACSEOFeatureContext extends MinkContext
         $selects = $form->findAll("css", "select");
         foreach ($selects as $select) {
             $name = $select->getAttribute("name");
+
             if ($name == NULL) {
                 $name = $select->getAttribute("id");
             }
@@ -534,6 +568,7 @@ class ACSEOFeatureContext extends MinkContext
         $textareas = $form->findAll("css", "textarea");
         foreach ($textareas as $textarea) {
             $name = $textarea->getAttribute("name");
+
             if ($name == NULL) {
                 $name = $textarea->getAttribute("id");
             }
@@ -543,29 +578,32 @@ class ACSEOFeatureContext extends MinkContext
         return $listAllInputs;
     }
 
+    /**
+     * Create the CSV File in Data Dir with all field
+     */
     protected function exportCSVFileWithHeader($file, $bakupCopy)
     {
         $listofAllInput = $this->getListInputName($bakupCopy);
         $listofAllInput = array_filter($listofAllInput);
-        
+
         for ($i = 7; $i>=0; $i--) {
             array_unshift($listofAllInput, $this->keyData[$i]);
         }
 
         array_push($listofAllInput, "result");
         $pathFile = $this->importFileDir.$this->filename;
-        
+
         if ($bakupCopy) {
             copy($pathFile, $pathFile.'.bak');
         }
-        
+
         $writeFile = fopen($pathFile, "w");
         $data = array_slice($this->dataTable, 0,8);
-        
-        for($i=count($data);$i<count($listofAllInput);$i++) {
+
+        for ($i=count($data);$i<count($listofAllInput);$i++) {
             array_push($data, "");
         }
-        
+
         fputcsv($writeFile, $listofAllInput,";");
         fputcsv($writeFile, $data,";");
         fclose($writeFile);
