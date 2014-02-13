@@ -52,6 +52,8 @@ The command will create **behat.yml** in your project directory. You have to put
 
 You can overload function by create your own function in your feature class
 
+For example overload the function clientConnect
+
 ```bash
 // YourBundle/Features/Context/FeatureContext
 protected function clientConnect ()
@@ -67,12 +69,16 @@ Also you can execute query from your feature.
 Example:
 ```bash
 // YourBundle/Features/Context/FeatureContext
-protected function clientConnect ()
+//.....
+protected function YourFunctionName()
 {
-    $em = $this->kernel->getContainer()->get('doctrine');
-    $user = $em->getRepository('YourBundleName:User')->find(1);
-    // manage your user
+    $doctrine = $this->kernel->getContainer()->get('doctrine');
+    $em = $doctrine->getManager();
+    $em->clear();
+    $entity = $em->getRepository('YourBundleName:Entity')->find(1);
+    // manage your entity
 }
+//.....
 ```
 #Test your form
 In `YourBundleName/Features/Data/` there is a CSV file created by the command `acseo:generate:feature ...`
