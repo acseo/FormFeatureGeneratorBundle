@@ -197,11 +197,12 @@ class ACSEOFeatureContext extends MinkContext
             $this->combineKeyAndData($this->keyData, $data[0]);
 
             // Create a new client to browse the application
-            if ($this->dataTable['loginUrl']!="" && $this->isConnected == false) {
+            if ($this->dataTable['loginUrl']!="") {
                 $boolLoggedIn = $this->clientConnect();
 
                 if ($boolLoggedIn == false && $boolLoggedIn != null) {
                     $this->out->writeln("<error>Authentification refused</error>");
+                    $this->testError = false;
                     continue;
                 }
             }
